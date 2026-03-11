@@ -4,7 +4,7 @@ import { redis } from "@/lib/upstash";
 import feedVideos from "@/data/feed-videos.json";
 import scenarios from "@/data/scenarios.json";
 import classifiedData from "@/src/x-downloads-data/top_1000_classified.json";
-import type { Scenario, RatingSubmission } from "@/types/rate";
+import type { Scenario, RatingSubmission } from "@/types/gaylyfans";
 
 const ADMIN_EMAIL = "liquanlai1995@gmail.com";
 
@@ -103,12 +103,13 @@ function getLoraLabel(videoUrl: string, position: string): string {
 async function getRatingsMap(): Promise<Map<string, { avgStars: number; totalRatings: number; bestPicks: number }>> {
   const ratingsMap = new Map<string, { avgStars: number; totalRatings: number; bestPicks: number }>();
   if (!redis) return ratingsMap;
+  const r = redis;
 
   for (const scenario of scenarios as Scenario[]) {
-    const keys = await redis.smembers(`submissions:${scenario.id}`);
+    const keys = await r.smembers(`submissions:${scenario.id}`);
     const submissions: RatingSubmission[] = [];
 
-    const results = await Promise.all(keys.map((key) => redis.get<string>(key)));
+    const results = await Promise.all(keys.map((key) => r.get<string>(key)));
     for (const data of results) {
       if (data) {
         try {
@@ -142,10 +143,10 @@ async function getRatingsMap(): Promise<Map<string, { avgStars: number; totalRat
 
 export async function GET() {
   const session = await getSession();
-  if (!session?.email) {
+  if (!session?.user?.email) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
-  if (session.email !== ADMIN_EMAIL) {
+  if (session.user.email !== ADMIN_EMAIL) {
     return NextResponse.json({ error: "Admin access only" }, { status: 403 });
   }
 
