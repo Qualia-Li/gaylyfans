@@ -136,4 +136,5 @@ dist
 docs/
 
 # Vercel
-.vercel
+.vercel.claude/
+x-downloads/
